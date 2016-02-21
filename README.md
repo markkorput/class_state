@@ -1,5 +1,5 @@
 # class_state
-A ruby class for managing class states
+A ruby gem for managing class states
 
 [![Build Status](https://travis-ci.org/markkorput/class_state.svg)](https://travis-ci.org/markkorput/class_state)
 
@@ -15,10 +15,9 @@ Bundler:
 	gem 'class_state'
 ```
 
-## ClassState::Owner
+## Implementation
 
-Implementation; manage a class' state using ClassState by including the
-ClassState::Owner module and optionally creating some state attribute readers/writers/accessors
+manage a class' state using ClassState by including the ClassState::Owner module and optionally creating some state attribute readers/writers/accessors
 
 	require 'class_state'
 
@@ -31,13 +30,17 @@ ClassState::Owner module and optionally creating some state attribute readers/wr
 	end
 
 
-Initialize; the ClassState::Owner module creates an initialize method
+## Initialize
+
+the ClassState::Owner module creates an initialize method
 which accepts an optional hash of values
 
 	op1 = Operation.new 
 	op2 = Operation.new(:verbose => true, :status => 'pending', :date => '2016-02-21')
 
-Access state directly; the ClassState::Owner module provides direct access to the instance's ClassState object through the `state` method
+## Access state object directly
+
+the ClassState::Owner module provides direct access to the instance's ClassState object through the `state` method
 
 	op1.state # => #<ClassState object>
 	op1.state.set(:id => '101') # => #<ClassState object>
@@ -46,7 +49,7 @@ Access state directly; the ClassState::Owner module provides direct access to th
 	
 For the complete API of the ClassState object see examples below
 
-Access state through reader/writer/accessor proxy methods
+## Access state attributes through proxy methods
 
 	# read/write
 	op1.state[:status] # => nil ('status' state attribute doesn't exist)
@@ -67,7 +70,6 @@ Access state through reader/writer/accessor proxy methods
 	op1.verbose = true
 	op1.verbose # NoMethodError (write-only)
 	op1.state[:verbose] # => true
-
 
 
 ## Complete ClassState API
@@ -148,7 +150,3 @@ Access state through reader/writer/accessor proxy methods
 	
 	state.unset(:value) # prints nothing, because max is unaffected
 	state.unset(:max) # prints: {:max => 100}
-	
-		
-	
-	
