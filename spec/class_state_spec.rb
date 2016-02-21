@@ -35,8 +35,17 @@ describe ClassState do
             expect(instance[:foo]).to eq nil
         end
     end
-
+    
     # WRITERS
+
+    describe '[]=' do
+        it 'updates a specified state attibute' do
+            instance = ClassState.new.update(:name => 'johnny')
+            expect(instance.data).to eq({:name => 'johnny'})
+            instance[:name] = 'cash'
+            expect(instance.data).to eq({:name => 'cash'})
+        end
+    end
 
     describe '.update' do
         it 'updates the current values with the given hash' do
