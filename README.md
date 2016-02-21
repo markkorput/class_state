@@ -42,7 +42,7 @@ Access state directly; the ClassState::Owner module provides direct access to th
 	op1.state # => #<ClassState object>
 	op1.state.set(:id => '101') # => #<ClassState object>
 	op2.state.get(:date) # => '2016-02-21'
-	op2.state.get[:status] # => 'pending'
+	op2.state[:status] # => 'pending'
 	
 For the complete API of the ClassState object see examples below
 
@@ -148,3 +148,7 @@ Access state through reader/writer/accessor proxy methods
 	
 	state.unset(:value) # prints nothing, because max is unaffected
 	state.unset(:max) # prints: {:max => 100}
+	
+		
+	
+	
