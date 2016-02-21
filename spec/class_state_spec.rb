@@ -104,69 +104,74 @@ describe ClassState do
                 expect(recording).to eq({:id => 123, :value => 'X'})
                 instance.set({:record_id => 101})
                 expect(instance.data).to eq({:record_id => 101})
-                expect(recording).to eq({:id => 123, :value => 'X', :record_id => 101})
+                expect(recording).to eq({:id => nil, :value => nil, :record_id => 101})
             end
-            
+
             it 'accepts a subject and method pair' do
-                recording = {}
-                
                 # create instance of temporary dummy class with callbacker method
-                recorder = Class.new do
-                    def callbacker(state, changes)
-                        recording.merge(changes)
+                recorder = Class.new(Object) do
+                    def recording
+                        @recording ||= {}
                     end
-                end
+
+                    def callbacker(state, changes)
+                        recording.merge!(changes)
+                    end
+                end.new
     
                 instance.on(:change, recorder, :callbacker) # on change, call the 'callbacker' method on instance
-                expect(recording).to eq({}) # callback not triggered yet
-                instance.update({:change => 'is').update(:a => 'sound'}) # these trigger the callback
-                expect(recording).to eq({:change => 'is', :a => 'sound'}) # verify
+                expect(recorder.recording).to eq({}) # callback not triggered yet
+                instance.update(:change => 'is').update(:a => 'sound') # these trigger the callback
+                expect(recorder.recording).to eq({:change => 'is', :a => 'sound'}) # verify
             end
         end
         
-        describe 'attribute :change event' do
-            it 'runs a block callback'
+        describe ':change_attribute event' do
+            it 'runs a block callback' do
                 recording = {} 
-                instance.on(:change, :id) do |state, changes|
+                instance.on(:change_attribute, :id) do |state, changes|
                     recording.merge!(changes)
                 end
 
                 expect(recording).to eq({})
                 # change id to 1
                 instance.set(:name => 'billy', :id => 1) 
-                expect(recording).to eq({:id => 1})
+                # all changes are given in the callback
+                expect(recording).to eq({:name => 'billy', :id => 1})
                 # no changes to id
                 instance.update(:name => 'johnny')
-                expect(recording).to eq({:id => 1})
+                expect(recording).to eq({:name => 'billy', :id => 1})
                 # change id to 2
-                instance.update(:name => 'jacky', :id => 2) 
-                expect(recording).to eq({:id => 2})
+                instance.update(:id => 2) 
+                expect(recording).to eq({:name => 'billy', :id => 2})
             end
             
             it 'triggers a specified method on a given instance' do
-                recording = {} 
-
                 # create instance of temporary dummy class with callbacker method
-                recorder = Class.new do
-                    def record(state, changes)
-                        recording.merge(changes)
+                recorder = Class.new(Object) do
+                    def recording
+                        @recording ||= {}
                     end
-                end
+
+                    def record(state, changes)
+                        recording.merge!(changes)
+                    end
+                end.new
                 
                 # when a change to attribute 'id' happens,
                 # call method 'record' on recorder
-                instance.on(:change, :id, recorder, :record)
+                instance.on(:change_attribute, :id, recorder, :record)
 
-                expect(recording).to eq({})
+                expect(recorder.recording).to eq({})
                 # change id to 1
                 instance.set(:name => 'billy', :id => 1) 
-                expect(recording).to eq({:id => 1})
+                expect(recorder.recording).to eq(:name => 'billy', :id => 1)
                 # no changes to id
                 instance.update(:name => 'johnny')
-                expect(recording).to eq({:id => 1})
+                expect(recorder.recording).to eq(:name => 'billy', :id => 1)
                 # change id to 2
-                instance.update(:name => 'jacky', :id => 2) 
-                expect(recording).to eq({:id => 2})
+                instance.update(:id => 2)
+                expect(recorder.recording).to eq(:name => 'billy', :id => 2)
             end
         end
         
@@ -184,11 +189,11 @@ describe ClassState do
                 end
     
                 # nothing yet
-                expect(recording).to eq {}
+                expect(recording).to eq({})
                 # set some initial values
                 instance.update({:id => 123, :value => 'X'})
                 # callback not triggered yet
-                expect(recording).to eq {}
+                expect(recording).to eq({})
                 # id
                 instance.unset(:id)
                 expect(recording).to eq({:id => 123})
@@ -201,25 +206,27 @@ describe ClassState do
             end
             
             it 'takes a callback as a subject/method pair' do 
-                recording = {}
-                
                 # create instance of temporary dummy class with callbacker method
-                recorder = Class.new do
-                    def callbacker(state, unsets)
-                        recording.merge(changes)
+                recorder = Class.new(Object) do
+                    def recording
+                        @recording ||= {}
                     end
-                end
+
+                    def callbacker(state, unsets)
+                        recording.merge!(unsets)
+                    end
+                end.new
 
                 instance = ClassState.new(:a => 'b', :c => 'd')
                 # on 'unset' event, call the 'callbacker' method on instance
                 instance.on(:unset, recorder, :callbacker)
-                expect(recording).to eq {} # callback not triggered yet
+                expect(recorder.recording).to eq({}) # callback not triggered yet
                 instance.unset([:a, :c]) # trigger the callback
-                expect(recording).to eq({:a => 'b', :c => 'd'}) # verify
+                expect(recorder.recording).to eq({:a => 'b', :c => 'd'}) # verify
             end
         end
-    
-        describe 'attribute :unset event' do
+
+        describe ':unset_attribute event' do
             let(:instance){
                 ClassState.new(:id => 101, :value => 50)
             }
@@ -228,16 +235,16 @@ describe ClassState do
                 # we're gonna 'record' changes to id attribute here
                 recording = {}
 
-                instance.on(:unset, :id) do |state, unsets|
+                instance.on(:unset_attribute, :id) do |state, unsets|
                     recording.merge!(unsets)
                 end
     
                 # nothing yet
-                expect(recording).to eq {}
+                expect(recording).to eq({})
                 # set some initial values
                 instance.update({:id => 123, :value => 'X'})
                 # callback not triggered yet
-                expect(recording).to eq {}
+                expect(recording).to eq({})
                 # id
                 instance.unset(:id)
                 expect(recording).to eq({:id => 123})
@@ -247,23 +254,25 @@ describe ClassState do
             end
             
             it 'takes a callback as a subject/method pair' do 
-                recording = {}
-                
                 # create instance of temporary dummy class with callbacker method
-                recorder = Class.new do
-                    def callbacker(state, unsets)
-                        recording.merge(changes)
+                recorder = Class.new(Object) do
+                    def recording
+                        @recording ||= {}
                     end
-                end
+
+                    def callbacker(state, unsets)
+                        recording.merge!(unsets)
+                    end
+                end.new
 
                 instance = ClassState.new(:a => 'b', :c => 'd')
                 # when the :id attribute is unset, call the 'callbacker' method on instance
-                instance.on(:unset, :id recorder, :callbacker)
-                expect(recording).to eq {} # callback not triggered yet
+                instance.on(:unset_attribute, :a, recorder, :callbacker)
+                expect(recorder.recording).to eq({}) # callback not triggered yet
                 instance.unset(:c) # this doesn't trigger the callback
-                expect(recording).to eq {} # callback still not triggered
+                expect(recorder.recording).to eq({}) # callback still not triggered
                 instance.unset(:a) # triggers the callback
-                expect(recording).to eq({:a => 'b'}) # verify
+                expect(recorder.recording).to eq({:a => 'b'}) # verify
             end
         end
     end
