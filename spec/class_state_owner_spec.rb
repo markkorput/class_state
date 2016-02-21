@@ -188,4 +188,28 @@ describe ClassState::Owner do
             end
         end
     end
+    
+    describe '.method_missing' do
+        let(:klass){
+            Class.new do
+                include ClassState::Owner
+                state_reader :name
+            end
+        }
+        
+        let(:instance){
+            klass.new(:name => 'doe')
+        }
+
+        it 'is used to implement state_reader/_writer/_accessor behaviour' do
+           expect(instance.respond_to?(:name)).to eq false
+           expect{ 
+               expect(instance.name).to eq 'doe'
+           }.to_not raise_error
+        end
+        
+        it 'still raises the NoMethodError when invoked incorrectly' do
+            expect{ instance.address }.to raise_error(NoMethodError)
+        end
+    end
 end

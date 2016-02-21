@@ -22,16 +22,16 @@ class ClassState
                     return self.state[writer[:attribute] || writer[:name]] = args.first
                 end
                 
-                puts self.class.state_writers.inspect
-                raise NoMethodError.new(method_name, *args)
-                return
+                # throw NoMethodError
+                return super(method_name, *args)
             end
 
             if reader = self.class.state_readers.find{|state_reader| state_reader[:name].to_s == method_name.to_s}
                 return self.state[reader[:attribute] || reader[:name]] || reader[:default]
             end
             
-            raise NoMethodError.new(method_name, *args)
+            # throw NoMethodError
+            return super(method_name, *args)
         end
 
         module ClassMethods
